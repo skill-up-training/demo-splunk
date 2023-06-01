@@ -1,0 +1,62 @@
+# index=web action=purchase 
+| top limit=4 categoryId
+
+# index=web OR index=security 
+| stats sum(bytes) as Total_Bytes 
+| eval Total_Bytes = tostring (Total_Bytes, "commas")
+
+# index=web OR index=security | stats sum(bytes) as Total_Bytes
+
+# top
+index=web 
+| table clientip, action categoryId, status 
+| top limit=4 categoryId
+
+# rename
+index=web 
+| table clientip, action categoryId, status 
+| where isnotnull(action) 
+| rename action as "ACTION", clientip as "Shopper IP"
+
+# dedup
+index=web 
+| table clientip
+| dedup clientip
+
+#  count
+index=web
+| stats count by categoryId 
+| where categoryId!="NULL"
+
+index=web 
+|  stats count by clientip
+
+index=web
+| stats count(categoryId)
+
+ # dc
+ index=web
+| stats dc(categoryId)
+
+# list
+index=web
+| dedup categoryId 
+| stats list(categoryId)
+
+
+# index=web
+| stats count by referer_domain, action 
+| stats sum(count) by referer_domain
+
+# fillnull
+index=security
+| stats values(user) as "Login user", count(user) as "Attempts" by src 
+|  fillnull value="no data available"
+
+
+index="order_api_dev"
+index="order_api_dev" AND (EXCEPTION OR ERROR)
+source="http-log-event" (index="order_api_dev") sourcetype="log4j"
+source="http-log-event" (index="order_api_dev") "time":"1683978574.706"
+source="http-log-event" (index="order_api_dev") SUCCESS
+source="http-log-event" (index="order_api_dev") FAILED
